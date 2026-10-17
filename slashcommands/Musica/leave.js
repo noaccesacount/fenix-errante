@@ -5,7 +5,7 @@ module.exports = {
     .setName("leave")
     .setDescription("Leave the voice channel."),
   async execute(interaction, client) {
-    const player = client.manager.players.get(interaction.guildId); // get this guild's active player
+    const player = client.manager.players.get(interaction.guild.id); // get this guild's active player
 
     if (!player) {
       return interaction.reply("❌ I'm not in a voice channel.");

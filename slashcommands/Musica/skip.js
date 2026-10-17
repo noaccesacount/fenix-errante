@@ -5,7 +5,7 @@ module.exports = {
     .setName("skip")
     .setDescription("Skip the current song."),
   async execute(interaction, client) {
-    const player = client.manager.players.get(interaction.guildId); // get this guild's active player
+    const player = client.manager.players.get(interaction.guild.id); // get this guild's active player
 
     if (!player || !player.current) {
       return interaction.reply("❌ There's no song currently playing.");
