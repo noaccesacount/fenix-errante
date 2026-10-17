@@ -1,28 +1,17 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("Skip the current song."),
-  async execute(interaction, client) {
-    const player = client.manager.players.get(interaction.guild.id); // get this guild's active player
+    .setName('skip')
+    .setDescription('Salta a la siguiente canción'),
+  async execute(client, interaction) {
+    const player = client.manager.players.get(interaction.guild.id);
 
     if (!player || !player.current) {
-      return interaction.reply("❌ There's no song currently playing.");
+      return interaction.reply({ content: '❌ No hay nada sonando.', ephemeral: true });
     }
 
-    if (
-      !interaction.member.voice.channel ||
-      interaction.member.voice.channelId !==
-        interaction.guild.members.me.voice.channelId
-    ) {
-      return interaction.reply(
-        "❌ You must be in the same voice channel as me.", // prevent skipping from another channel
-      );
-    }
-
-    player.skip(); // actually skip the current song
-
-    return interaction.reply("⏭️ Song skipped successfully.");
-  },
+    player.skip();
+    return interaction.reply({ content: '⏭️ Canción saltada.' });
+  }
 };

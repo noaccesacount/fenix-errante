@@ -1,26 +1,13 @@
-const { readdirSync } = require("fs");
+const fs = require('fs');
+const path = require('path');
 
-module.exports = {
-  async loadSlash(client) {
-    const commands = []; // will store all commands in JSON format for registration
+module.exports.loadCommands = (client) => {
+  const commandsPath = path.join(__dirname, '../slashcommands');
+  const files = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
 
-    for (const category of readdirSync("./slashcommands")) {
-      // loop through each category folder
-      const files = readdirSync(`./slashcommands/${category}`).filter(
-        (file) => file.endsWith(".js"), // only load .js files
-      );
-
-      for (const file of files) {
-        const command = require(`../slashcommands/${category}/${file}`); // import the command file
-
-        client.slashCommands.set(command.data.name, command); // register command in the client's collection
-
-        commands.push(command.data.toJSON()); // add command data for Discord API registration
-      }
-    }
-
-    await client.application.commands.set(commands); // register/update slash commands on Discord
-
-    console.info(`✅ Slash commands loaded successfully!`);
-  },
-};
+  for (const file of files) {
+    const command = require(path.join(commandsPath, file));
+    client.slashCommands.set(command.data.name, command);
+  }
+  console.log(`✅ ${files.length} comandos cargados`);
+};   

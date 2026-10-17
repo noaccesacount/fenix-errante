@@ -1,33 +1,21 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("pause")
-    .setDescription("Pause the current song."),
-  async execute(interaction, client) {
-    const player = client.manager.players.get(interaction.guild.id); // get this guild's active player
+    .setName('pause')
+    .setDescription('Pausa la música'),
+  async execute(client, interaction) {
+    const player = client.manager.players.get(interaction.guild.id);
 
     if (!player || !player.current) {
-      return interaction.reply("❌ There's no song currently playing.");
-    }
-
-    if (
-      !interaction.member.voice.channel ||
-      interaction.member.voice.channelId !==
-        interaction.guild.members.me.voice.channelId
-    ) {
-      return interaction.reply(
-        "❌ You must be in the same voice channel as me.", // prevent pausing from another channel
-      );
+      return interaction.reply({ content: '❌ No hay nada sonando.', ephemeral: true });
     }
 
     if (player.paused) {
-      // player.paused is the state, not the pause() method
-      return interaction.reply("⚠️ The music is already paused.");
+      return interaction.reply({ content: '⚠️ Ya está pausada.', ephemeral: true });
     }
 
-    player.pause(); // actually pause playback
-
-    return interaction.reply("⏸️ Music paused successfully.");
-  },
+    player.pause();
+    return interaction.reply({ content: '⏸️ Música pausada.' });
+  }
 };

@@ -1,28 +1,17 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("leave")
-    .setDescription("Leave the voice channel."),
-  async execute(interaction, client) {
-    const player = client.manager.players.get(interaction.guild.id); // get this guild's active player
+    .setName('leave')
+    .setDescription('El bot sale del canal de voz'),
+  async execute(client, interaction) {
+    const player = client.manager.players.get(interaction.guild.id);
 
     if (!player) {
-      return interaction.reply("❌ I'm not in a voice channel.");
+      return interaction.reply({ content: '❌ No estoy en ningún canal de voz.', ephemeral: true });
     }
 
-    if (
-      !interaction.member.voice.channel ||
-      interaction.member.voice.channelId !==
-        interaction.guild.members.me.voice.channelId
-    ) {
-      return interaction.reply(
-        "❌ You must be in the same voice channel as me.", // prevent pausing from another channel
-      );
-    }
-
-    player.destroy(); // actually leave the voice channel
-
-    return interaction.reply("🚪 I have left the voice channel.");
-  },
+    player.destroy();
+    return interaction.reply({ content: '👋 Me voy del canal de voz.' });
+  }
 };

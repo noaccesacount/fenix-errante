@@ -1,33 +1,23 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Plays a song or adds it to the queue.")
-    .addStringOption((option) =>
-      option
-        .setName("song")
-        .setDescription("Type the song name or paste the song link")
-        .setRequired(true),
+    .setName('play')
+    .setDescription('Reproduce una canción')
+    .addStringOption(opt =>
+      opt.setName('song').setDescription('Nombre o enlace de la canción').setRequired(true)
     ),
-  async execute(interaction, client) {
+  async execute(client, interaction) {
     const voiceChannel = interaction.member.voice.channel;
-    const query = interaction.options.getString("song");
+    const query = interaction.options.getString('song');
 
     if (!voiceChannel) {
-      return interaction.reply({
-        content: "❌ You must join a voice channel first.",
-        ephemeral: true,
-      });
+      return interaction.reply({ content: '❌ Únete a un canal de voz primero.', ephemeral: true });
     }
 
     const botChannel = interaction.guild.members.me.voice.channel;
-
     if (botChannel && botChannel.id !== voiceChannel.id) {
-      return interaction.reply({
-        content: "❌ I'm already playing music in another voice channel.",
-        ephemeral: true,
-      });
+      return interaction.reply({ content: '❌ Ya estoy en otro canal de voz.', ephemeral: true });
     }
 
     await interaction.deferReply();
@@ -36,9 +26,7 @@ module.exports = {
       const result = await client.manager.search({ query });
 
       if (!result?.tracks?.length) {
-        return interaction.editReply({
-          content: "❌ No song was found.",
-        });
+        return interaction.editReply({ content: '❌ No se encontró la canción.' });
       }
 
       const track = result.tracks[0];
@@ -52,7 +40,6 @@ module.exports = {
           textChannelId: interaction.channel.id,
           autoPlay: false,
         });
-
         await player.connect();
       }
 
@@ -63,13 +50,11 @@ module.exports = {
       }
 
       return interaction.editReply({
-        content: `🎵 Added to queue: **${track.title}**`,
+        content: `🎵 Reproduciendo: **${track.title}**`
       });
     } catch (error) {
-      console.error("[MUSIC] Error in /play:", error);
-      return interaction.editReply({
-        content: "❌ An error occurred while searching or playing the song.",
-      });
+      console.error('[PLAY] Error:', error);
+      return interaction.editReply({ content: `❌ Error: ${error.message}` });
     }
-  },
+  }
 };
