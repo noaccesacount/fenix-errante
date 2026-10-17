@@ -74,13 +74,17 @@ client.once('ready', async () => {
   console.log(`🟢 Online como ${client.user.tag}`);
   client.manager.init(client.user.id);
 
-  const rest = new REST().setToken(config.token);
-  await rest.put(
-    Routes.applicationGuildCommands(config.clientId, config.ownerId),
-    { body: client.slashCommands.map(cmd => cmd.data.toJSON()) }
-  );
-  console.log(`✅ ${client.slashCommands.size} slash commands registrados`);
-});
+  try {
+    const rest = new REST().setToken(config.token);
+    await rest.put(
+      Routes.applicationCommands(config.clientId),
+      { body: client.slashCommands.map(cmd => cmd.data.toJSON()) }
+    );
+    console.log(`✅ ${client.slashCommands.size} slash commands registrados`);
+  } catch (error) {
+    console.error(`❌ Error registrando comandos:`, error.message);
+  }
+});   
 
 // Raw para Moonlink
 client.on('raw', (packet) => {
