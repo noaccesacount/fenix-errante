@@ -22,15 +22,15 @@ const client = new Client({
 client.slashCommands = new Collection();
 client.interactions = new Collection();
 
-// Moonlink v5
+// Moonlink v5 (Lavalink v4)
 const manager = new Manager({
   nodes: [
     {
       identifier: "main",
-      host: "lavalink.heavencloud.in",
-      port: 2333,
-      password: "heavencloud",
-      secure: false
+      host: "lavalinkv4.serenetia.com",
+      port: 443,
+      password: "https://dsc.gg/ajidevserver",
+      secure: true
     }
   ],
   sendPayload: (guildId, payload) => {
@@ -52,4 +52,4 @@ client.on('raw', (packet) => {
   client.manager.packetUpdate(packet);
 });
 
-client.login(config.token);   
+client.login(config.token);
