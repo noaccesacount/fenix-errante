@@ -1,7 +1,7 @@
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const config = require("./config.js");
 const express = require("express");
-const { Kazagumo } = require("kazagumo");
+const { Moonlink } = require("moonlink.js");
 
 // Keep-alive
 const app = express();
@@ -22,21 +22,16 @@ const client = new Client({
 client.slashCommands = new Collection();
 client.interactions = new Collection();
 
-// Lavalink (Kazagumo v2)
-const manager = new Kazagumo(client, {
-  send: (guildId, payload) => {
-    const guild = client.guilds.cache.get(guildId);
-    if (!guild) return;
-    const member = guild.members.cache.get(payload.userId);
-    if (member) {
-      member.voice.setChannel(payload.channelId);
-    }
-  },
+// Moonlink (Lavalink)
+const manager = new Moonlink(client, {
+  autoCreate: false,
   nodes: [
     {
       id: "main",
-      url: "ws://lavalink.heavencloud.in:2333",
-      auth: "heavencloud",
+      host: "lavalink.heavencloud.in",
+      port: 2333,
+      authorization: "heavencloud",
+      secure: false,
       retryAmount: Infinity
     }
   ]
