@@ -1,0 +1,7 @@
+module.exports = {
+  token: "process.env.DISCORD_TOKEN",
+  clientId: "process.env.CLIENT_ID",
+  ownerId: "process.env.OWNER_ID",
+  logsChannelId: "1560971603418808451",
+  key: "",
+};

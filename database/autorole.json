@@ -1,0 +1,6 @@
+{
+  "autorole": {
+    "users": ["@player"],
+    "bots": ["@bots"]
+  }
+}
