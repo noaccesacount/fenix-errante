@@ -12,7 +12,6 @@ module.exports = {
     ),
   async execute(interaction, client) {
     const voiceChannel = interaction.member.voice.channel;
-
     const query = interaction.options.getString("song");
 
     if (!voiceChannel) {
@@ -22,7 +21,7 @@ module.exports = {
       });
     }
 
-    const botChannel = interaction.guild.members.me.voice.channel; // voice channel the bot is currently in (if any)
+    const botChannel = interaction.guild.members.me.voice.channel;
 
     if (botChannel && botChannel.id !== voiceChannel.id) {
       return interaction.reply({
@@ -31,33 +30,27 @@ module.exports = {
       });
     }
 
-    await interaction.deferReply(); // search can take a few seconds, so acknowledge the interaction first
+    await interaction.deferReply();
 
     try {
-      const result = await client.manager.search({
-        query,
-        requester: interaction.user,
-      });
+      const result = await client.manager.search({ query });
 
       if (!result?.tracks?.length) {
         return interaction.editReply({
-          // must use editReply, not reply, since deferReply already ran
           content: "❌ No song was found.",
         });
       }
 
-      const track = result.tracks[0]; // only the first result, since resultLimit is set to 1
+      const track = result.tracks[0];
 
-      let player = client.manager.players.get(interaction.guildId); // reuse an existing player for this server if one exists
+      let player = client.manager.players.get(interaction.guild.id);
 
       if (!player) {
-        player = client.manager.players.create({
-          guildId: interaction.guildId,
+        player = client.manager.createPlayer({
+          guildId: interaction.guild.id,
           voiceChannelId: voiceChannel.id,
-          textChannelId: interaction.channelId,
+          textChannelId: interaction.channel.id,
           autoPlay: false,
-          selfDeaf: true, // bot deafens itself, doesn't need to hear other users
-          volume: 100,
         });
 
         await player.connect();
@@ -66,7 +59,7 @@ module.exports = {
       player.queue.add(track);
 
       if (!player.playing && !player.paused) {
-        await player.play(); // only start playback if nothing is currently playing/paused (otherwise just queue it)
+        await player.play();
       }
 
       return interaction.editReply({
@@ -74,7 +67,6 @@ module.exports = {
       });
     } catch (error) {
       console.error("[MUSIC] Error in /play:", error);
-
       return interaction.editReply({
         content: "❌ An error occurred while searching or playing the song.",
       });
