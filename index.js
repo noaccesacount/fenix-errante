@@ -26,10 +26,24 @@ client.interactions = new Collection();
 const manager = new Manager({
   nodes: [
     {
-      identifier: "heavencloud-v4",
-      host: "lavalink.heavencloud.in",
+      identifier: "trinium",
+      host: "lavalink-v4.triniumhost.indevs.in",
       port: 443,
-      password: "heavencloud",
+      password: "free",
+      secure: true
+    },
+    {
+      identifier: "nazha",
+      host: "lavalink.nazha.online",
+      port: 443,
+      password: "nazhafreelava",
+      secure: true
+    },
+    {
+      identifier: "millo",
+      host: "lava-v4.millohost.my.id",
+      port: 443,
+      password: "https://discord.gg/mjS5J2K3ep",
       secure: true
     }
   ],
@@ -40,6 +54,17 @@ const manager = new Manager({
 });
 
 client.manager = manager;
+
+// Logs de conexión (para ver en Render qué nodo conecta)
+client.manager.on('nodeConnect', (node) => {
+  console.log(`✅ Nodo Lavalink conectado: ${node.identifier}`);
+});
+client.manager.on('nodeError', (node, error) => {
+  console.error(`❌ Nodo ${node.identifier} error:`, error.message);
+});
+client.manager.on('nodeDisconnect', (node) => {
+  console.log(`⚠️ Nodo ${node.identifier} desconectado`);
+});
 
 require("./handlers/eventHandler").loadEvents(client);
 
@@ -52,4 +77,4 @@ client.on('raw', (packet) => {
   client.manager.packetUpdate(packet);
 });
 
-client.login(config.token);
+client.login(config.token);   
