@@ -25,18 +25,12 @@ client.interactions = new Collection();
 // Lavalink (Kazagumo)
 const manager = new Kazagumo(client, {
   send: (guildId, payload) => {
-    const channel = client.channels.cache.get(payload.deaf || payload.speak ? payload.channelId : payload.channelId);
-    if (!channel) return;
-    client.api.guilds[guildId].voiceChannels[channel.id].patch({
-      data: {
-        users: [{
-          id: payload.userId,
-          channel_id: payload.channelId,
-          mute: payload.deaf,
-          deaf: payload.deaf
-        }]
-      }
-    }).catch(console.error);
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) return;
+    const member = guild.members.cache.get(payload.userId);
+    if (member) {
+      member.voice.setChannel(payload.channelId);
+    }
   },
   nodes: [
     {
