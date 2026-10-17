@@ -1,5 +1,5 @@
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
-const config = require("./config.json");
+const config = require("./config.js");
 const express = require("express");
 
 // Keep-alive
