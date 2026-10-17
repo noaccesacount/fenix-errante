@@ -1,13 +1,33 @@
 const fs = require('fs');
 const path = require('path');
 
-module.exports.loadCommands = (client) => {
-  const commandsPath = path.join(__dirname, '../slashcommands');
-  const files = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+function loadCommandsFromDir(dir, client) {
+  const files = fs.readdirSync(dir);
+  let count = 0;
 
   for (const file of files) {
-    const command = require(path.join(commandsPath, file));
-    client.slashCommands.set(command.data.name, command);
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      count += loadCommandsFromDir(filePath, client);
+    } else if (file.endsWith('.js')) {
+      try {
+        const command = require(filePath);
+        if (command.data && command.execute) {
+          client.slashCommands.set(command.data.name, command);
+          count++;
+        }
+      } catch (e) {
+        console.error(`⚠️ Error cargando ${file}:`, e.message);
+      }
+    }
   }
-  console.log(`✅ ${files.length} comandos cargados`);
+  return count;
+}
+
+module.exports.loadCommands = (client) => {
+  const commandsPath = path.join(__dirname, '../slashcommands');
+  const count = loadCommandsFromDir(commandsPath, client);
+  console.log(`✅ ${count} comandos cargados`);
 };   
