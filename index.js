@@ -1,80 +1,74 @@
-const { Client, Collection, GatewayIntentBits } = require("discord.js");
-const config = require("./config.js");
-const express = require("express");
-const { Manager } = require("moonlink.js");
+const { SlashCommandBuilder } = require("discord.js");
 
-// Keep-alive
-const app = express();
-app.get('/', (req, res) => res.send('Bot está vivo'));
-app.listen(process.env.PORT || 3000, () =>
-  console.log(`Keep-alive activo en puerto ${process.env.PORT || 3000}`)
-);
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName("play")
+    .setDescription("Plays a song or adds it to the queue.")
+    .addStringOption((option) =>
+      option
+        .setName("song")
+        .setDescription("Type the song name or paste the song link")
+        .setRequired(true),
+    ),
+  async execute(interaction, client) {
+    const voiceChannel = interaction.member.voice.channel;
+    const query = interaction.options.getString("song");
 
-// Bot
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildVoiceStates
-  ]
-});
-
-client.slashCommands = new Collection();
-client.interactions = new Collection();
-
-// Moonlink v5 (Lavalink v4)
-const manager = new Manager({
-  nodes: [
-    {
-      identifier: "trinium",
-      host: "lavalink-v4.triniumhost.indevs.in",
-      port: 443,
-      password: "free",
-      secure: true
-    },
-    {
-      identifier: "nazha",
-      host: "lavalink.nazha.online",
-      port: 443,
-      password: "nazhafreelava",
-      secure: true
-    },
-    {
-      identifier: "millo",
-      host: "lava-v4.millohost.my.id",
-      port: 443,
-      password: "https://discord.gg/mjS5J2K3ep",
-      secure: true
+    if (!voiceChannel) {
+      return interaction.reply({
+        content: "❌ You must join a voice channel first.",
+        ephemeral: true,
+      });
     }
-  ],
-  sendPayload: (guildId, payload) => {
-    const guild = client.guilds.cache.get(guildId);
-    if (guild) guild.shard.send(JSON.parse(payload));
-  }
-});
 
-client.manager = manager;
+    const botChannel = interaction.guild.members.me.voice.channel;
 
-// Logs de conexión (para ver en Render qué nodo conecta)
-client.manager.on('nodeConnect', (node) => {
-  console.log(`✅ Nodo Lavalink conectado: ${node.identifier}`);
-});
-client.manager.on('nodeError', (node, error) => {
-  console.error(`❌ Nodo ${node.identifier} error:`, error.message);
-});
-client.manager.on('nodeDisconnect', (node) => {
-  console.log(`⚠️ Nodo ${node.identifier} desconectado`);
-});
+    if (botChannel && botChannel.id !== voiceChannel.id) {
+      return interaction.reply({
+        content: "❌ I'm already playing music in another voice channel.",
+        ephemeral: true,
+      });
+    }
 
-require("./handlers/eventHandler").loadEvents(client);
+    await interaction.deferReply();
 
-client.once('ready', () => {
-  console.log(`Online como ${client.user.tag}`);
-  client.manager.init(client.user.id);
-});
+    try {
+      const result = await client.manager.search({ query });
 
-client.on('raw', (packet) => {
-  client.manager.packetUpdate(packet);
-});
+      if (!result?.tracks?.length) {
+        return interaction.editReply({
+          content: "❌ No song was found.",
+        });
+      }
 
-client.login(config.token);   
+      const track = result.tracks[0];
+
+      let player = client.manager.players.get(interaction.guild.id);
+
+      if (!player) {
+        player = client.manager.players.create({
+          guildId: interaction.guild.id,
+          voiceChannelId: voiceChannel.id,
+          textChannelId: interaction.channel.id,
+        });
+
+        await player.connect();
+      }
+
+      player.queue.add(track);
+
+      if (!player.playing && !player.paused) {
+        await player.play();
+      }
+
+      return interaction.editReply({
+        content: `🎵 Added to queue: **${track.title}**`,
+      });
+    } catch (error) {
+      console.error("[MUSIC] Error in /play:", error);
+      return interaction.editReply({
+        content: `❌ An error occurred: ${error.message}`,
+      });
+    }
+  },
+};
