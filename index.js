@@ -1,55 +1,74 @@
-const { Client, Collection, GatewayIntentBits } = require("discord.js");
-const config = require("./config.js");
-const express = require("express");
-const { Manager } = require("moonlink.js");
+const { SlashCommandBuilder } = require("discord.js");
 
-// Keep-alive
-const app = express();
-app.get('/', (req, res) => res.send('Bot está vivo'));
-app.listen(process.env.PORT || 3000, () =>
-  console.log(`Keep-alive activo en puerto ${process.env.PORT || 3000}`)
-);
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName("play")
+    .setDescription("Plays a song or adds it to the queue.")
+    .addStringOption((option) =>
+      option
+        .setName("song")
+        .setDescription("Type the song name or paste the song link")
+        .setRequired(true),
+    ),
+  async execute(interaction, client) {
+    const voiceChannel = interaction.member.voice.channel;
+    const query = interaction.options.getString("song");
 
-// Bot
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildVoiceStates
-  ]
-});
-
-client.slashCommands = new Collection();
-client.interactions = new Collection();
-
-// Moonlink v5 (Lavalink v4)
-const manager = new Manager({
-  nodes: [
-    {
-      identifier: "main",
-      host: "lavalinkv4.serenetia.com",
-      port: 443,
-      password: "https://dsc.gg/ajidevserver",
-      secure: true
+    if (!voiceChannel) {
+      return interaction.reply({
+        content: "❌ You must join a voice channel first.",
+        ephemeral: true,
+      });
     }
-  ],
-  sendPayload: (guildId, payload) => {
-    const guild = client.guilds.cache.get(guildId);
-    if (guild) guild.shard.send(JSON.parse(payload));
-  }
-});
 
-client.manager = manager;
+    const botChannel = interaction.guild.members.me.voice.channel;
 
-require("./handlers/eventHandler").loadEvents(client);
+    if (botChannel && botChannel.id !== voiceChannel.id) {
+      return interaction.reply({
+        content: "❌ I'm already playing music in another voice channel.",
+        ephemeral: true,
+      });
+    }
 
-client.once('ready', () => {
-  console.log(`Online como ${client.user.tag}`);
-  client.manager.init(client.user.id);
-});
+    await interaction.deferReply();
 
-client.on('raw', (packet) => {
-  client.manager.packetUpdate(packet);
-});
+    try {
+      const result = await client.manager.search({ query });
 
-client.login(config.token);
+      if (!result?.tracks?.length) {
+        return interaction.editReply({
+          content: "❌ No song was found.",
+        });
+      }
+
+      const track = result.tracks[0];
+
+      let player = client.manager.players.get(interaction.guild.id);
+
+      if (!player) {
+        player = client.manager.players.create({
+          guildId: interaction.guild.id,
+          voiceChannelId: voiceChannel.id,
+          textChannelId: interaction.channel.id,
+        });
+
+        await player.connect();
+      }
+
+      player.queue.add(track);
+
+      if (!player.playing && !player.paused) {
+        await player.play();
+      }
+
+      return interaction.editReply({
+        content: `🎵 Added to queue: **${track.title}**`,
+      });
+    } catch (error) {
+      console.error("[MUSIC] Error in /play:", error);
+      return interaction.editReply({
+        content: "❌ An error occurred while searching or playing the song.",
+      });
+    }
+  },
+};
