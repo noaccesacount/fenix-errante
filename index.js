@@ -22,7 +22,7 @@ const client = new Client({
 client.slashCommands = new Collection();
 client.interactions = new Collection();
 
-// Lavalink (Kazagumo)
+// Lavalink (Kazagumo v2)
 const manager = new Kazagumo(client, {
   send: (guildId, payload) => {
     const guild = client.guilds.cache.get(guildId);
@@ -34,11 +34,9 @@ const manager = new Kazagumo(client, {
   },
   nodes: [
     {
-      name: "HeavenCloud",
-      host: "lavalink.heavencloud.in",
-      port: 2333,
+      id: "main",
+      url: "ws://lavalink.heavencloud.in:2333",
       auth: "heavencloud",
-      secure: false,
       retryAmount: Infinity
     }
   ]
