@@ -1,7 +1,7 @@
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const config = require("./config.js");
 const express = require("express");
-const { Moonlink } = require("moonlink.js");
+const { Manager } = require("moonlink.js");
 
 // Keep-alive
 const app = express();
@@ -22,25 +22,34 @@ const client = new Client({
 client.slashCommands = new Collection();
 client.interactions = new Collection();
 
-// Moonlink (Lavalink)
-const manager = new Moonlink(client, {
-  autoCreate: false,
+// Moonlink v5
+const manager = new Manager({
   nodes: [
     {
-      id: "main",
+      identifier: "main",
       host: "lavalink.heavencloud.in",
       port: 2333,
-      authorization: "heavencloud",
-      secure: false,
-      retryAmount: Infinity
+      password: "heavencloud",
+      secure: false
     }
-  ]
+  ],
+  sendPayload: (guildId, payload) => {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) guild.shard.send(JSON.parse(payload));
+  }
 });
 
 client.manager = manager;
 
 require("./handlers/eventHandler").loadEvents(client);
 
-client.once('ready', () => console.log(`Online como ${client.user.tag}`));
+client.once('ready', () => {
+  console.log(`Online como ${client.user.tag}`);
+  client.manager.init(client.user.id);
+});
+
+client.on('raw', (packet) => {
+  client.manager.packetUpdate(packet);
+});
 
 client.login(config.token);   
